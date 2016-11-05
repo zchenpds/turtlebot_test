@@ -1,0 +1,21 @@
+<launch>
+  <node pkg="turtlebot_test" type="turtlebot_test" name="test"  output="screen">
+    <param name="linear_scale" value="0.3" type="double"/>
+    <param name="angular_scale" value="0.8" type="double"/>
+    <param name="Kr" value=".5" type="double"/>
+    <param name="Ka" value=".5" type="double"/>
+    <param name="Kb" value="0" type="double"/>
+    <param name="omega" value="0.5" type="double"/>
+    <param name="mode" value="3" type="int"/>
+    <!-- <remap from="cmd_vel" to="test_velocity_smoother/raw_cmd_vel"/> -->
+    <remap from="cmd_vel" to="/cmd_vel_mux/input/teleop"/>
+  </node>
+  <!-- velocity smoother -->
+  <!-- <node pkg="nodelet" type="nodelet" name="test_velocity_smoother"
+        args="load yocs_velocity_smoother/VelocitySmootherNodelet /mobile_base_nodelet_manager"> -->
+    <!-- <rosparam file="$(find turtlebot_bringup)/param/defaults/smoother.yaml" command="load"/> -->
+    <!-- <remap from="test_velocity_smoother/odometry" to="/odom"/>  -->
+    <!-- <remap from="test_velocity_smoother/robot_cmd_vel" to="/mobile_base/commands/velocity"/> -->
+    <!-- <remap from="test_velocity_smoother/smooth_cmd_vel" to="/cmd_vel_mux/input/teleop"/> -->
+  <!-- </node> -->
+</launch>

@@ -117,11 +117,12 @@ void Test::circleControl(double stepSize)
 void Test::sineVelControl(double stepSize)
 {
     //const double OMEGA = 0.5;
-    double omega;
+    double omega, init_phase;
     nh.getParam("omega", omega);
+    nh.getParam("init_phase", init_phase);
     const double A = 1.5;
     //if (omega > 0.6/A) omega = 0.6/A;
-    static double phi = 0;
+    static double phi = init_phase;
     if (phi > 2*PI) phi -= 2 * PI;
     else if (phi < -2*PI) phi += 2 * PI;
     phi += omega * stepSize;

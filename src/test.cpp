@@ -42,6 +42,7 @@
 const double LOOP_FREQ = 10;
 
 double posX, posY, theta;
+
 bool ready = false;
 
 class Test
@@ -52,6 +53,7 @@ public:
     ros::NodeHandle nh, nh_odom;
     ros::Publisher vel_pub;
     ros::Subscriber odom_sub;
+    ros::Subscriber adp_sub; // subscribe to ADP omg
 
     double linear_scale;
     double angular_scale;
@@ -61,11 +63,13 @@ public:
 
     double posXCmd, posYCmd, oriZCmd;
     double Kr, Ka, Kb;
-
+    double omgInst; // adp output - intantaneous omega
+    
     int mode;
 
 public:
     static void odomCallback(const nav_msgs::Odometry::ConstPtr& msg);
+    void adpCallback(const geometry_msgs::Twist::ConstPtr& msg);
 
     Test() : nh("~")
     {
@@ -79,6 +83,7 @@ public:
       nh.getParam("Kb", Kb);
       vel_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 1);
       odom_sub = nh.subscribe("/odom", 1, &odomCallback);
+      adp_sub = nh.subscribe("/cmd_omg", 1, &Test::adpCallback, this);
       ROS_INFO("[Test] Initialized.");
     }
     void circleControl(double stepSize);
@@ -89,6 +94,8 @@ public:
     void execTwist1();
     void execTwist2();
     int getMode();
+    void adpVelControl(double stepSize, double omgInst);
+    
 };
 
 void Test::odomCallback(const nav_msgs::Odometry::ConstPtr& msg)
@@ -120,7 +127,7 @@ void Test::sineVelControl(double stepSize)
     double omega, init_phase;
     nh.getParam("omega", omega);
     nh.getParam("init_phase", init_phase);
-    const double A = 1.5;
+    const double A = 1;
     //if (omega > 0.6/A) omega = 0.6/A;
     static double phi = init_phase;
     if (phi > 2*PI) phi -= 2 * PI;
@@ -244,6 +251,38 @@ int Test::getMode()
     return mode;
 }
 
+// ***** ADP robot control ***** //
+void Test::adpVelControl(double stepSize, double omgInst)
+{
+    //const double OMEGA = 0.5;
+    double init_phase;    
+    nh.getParam("init_phase", init_phase);
+    const double A = 1.5;
+    //if (omega > 0.6/A) omega = 0.6/A;
+    static double phi = init_phase;
+    if (phi > 2*PI) phi -= 2 * PI;
+    else if (phi < -2*PI) phi += 2 * PI;
+    phi += omgInst * stepSize;
+
+    geometry_msgs::Twist velCmd;
+    velCmd.linear.x = A*omgInst*sin(phi);
+    velCmd.angular.z = 0;
+    //ROS_INFO("Velocity Control Mode!");
+    //if(ready) execTwist(velCmd);
+    ROS_INFO("inst omega:[%f]", omgInst);
+    execTwist(velCmd);
+
+}
+
+
+// ***** ADP instantaneous omega callback ***** //
+void Test::adpCallback(const geometry_msgs::Twist::ConstPtr& msg)
+{
+    this->omgInst = msg->angular.x;
+    //ROS_INFO("inst omega:[%f]", omgInst);
+}
+
+
 int main(int argc, char** argv)
 {
     ROS_INFO("[Test] Ready to initial.");
@@ -251,6 +290,7 @@ int main(int argc, char** argv)
 
     Test test;
     int mode;
+    //double omgInst;
     ros::Rate loop_rate(LOOP_FREQ);
 
     while (ros::ok())
@@ -265,9 +305,11 @@ int main(int argc, char** argv)
         
         ros::spinOnce();
         mode = test.getMode();
+        //ROS_INFO("inst omega:[%f]", omgInst);
         if(mode == 3) test.circleControl(1/LOOP_FREQ);
         else if(mode == 2) test.sinePosControl(1/LOOP_FREQ);
-        else if(mode == 1) test.sineVelControl(1/LOOP_FREQ);
+        else if(mode == 1) test.sineVelControl(1/LOOP_FREQ);        
+        else if(mode == 4) test.adpVelControl(1/LOOP_FREQ, test.omgInst);
         loop_rate.sleep();
     }
 }

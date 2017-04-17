@@ -6,9 +6,10 @@
     <param name="Ka" value=".5" type="double"/>
     <param name="Kb" value="0" type="double"/>
     <param name="omega" value="0.5" type="double"/>
-    <param name="mode" value="3" type="int"/>
+    <param name="mode" value="1" type="int"/>
     <!-- <remap from="cmd_vel" to="test_velocity_smoother/raw_cmd_vel"/> -->
-    <remap from="cmd_vel" to="/cmd_vel_mux/input/teleop"/>
+    <!-- <remap from="cmd_vel" to="/cmd_vel_mux/input/teleop"/> -->
+    <remap from="cmd_vel" to="/pedbot/control/cmd_vel"/>
   </node>
   <!-- velocity smoother -->
   <!-- <node pkg="nodelet" type="nodelet" name="test_velocity_smoother"
